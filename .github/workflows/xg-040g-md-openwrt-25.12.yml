@@ -85,16 +85,18 @@ jobs:
         run: |
           git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" openwrt
 
-      - name: Extract xg-040g-md.tar.gz to openwrt
+      - name: Extract XG-040G-MD.tar.gz to openwrt
         run: |
-          if [ -f "xg-040g-md.tar.gz" ]; then
-            echo "📦 Extracting xg-040g-md.tar.gz to openwrt/"
-            tar -xzf xg-040g-md.tar.gz -C openwrt/
+          if [ -f "XG-040G-MD.tar.gz" ]; then
+            echo "📦 Extracting XG-040G-MD.tar.gz to openwrt/"
+            tar -xzf XG-040G-MD.tar.gz -C openwrt/
             echo "✅ Configuration extracted successfully"
             echo "📁 Extracted files:"
             ls -la openwrt/
           else
-            echo "⚠️ xg-040g-md.tar.gz not found, skipping extraction"
+            echo "⚠️ XG-040G-MD.tar.gz not found, skipping extraction"
+            echo "Files in repository root:"
+            ls -la *.tar.gz 2>/dev/null || echo "No tar.gz files found"
           fi
 
       - name: Move build dirs to /mnt/openwrt
@@ -145,12 +147,11 @@ jobs:
       - name: Hotfix rust llvm CI option
         working-directory: ./openwrt
         run: |
-          sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/'             feeds/packages/lang/rust/Makefile
+          sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
           grep -n "download-ci-llvm" feeds/packages/lang/rust/Makefile
 
       - name: Copy configuration and defconfig
         run: |
-          # 从仓库复制配置文件
           cp -fv "${CONFIG_FILE}" openwrt/.config
           cd openwrt && make defconfig
           [ -e .config ] && cp .config defconfig-final.config
@@ -168,7 +169,6 @@ jobs:
         working-directory: ./openwrt
         run: |
           make download -j4 V=s
-          # Remove small incomplete files <1KB
           find dl -size -1024c -delete
 
       - name: Compile OpenWrt firmware
