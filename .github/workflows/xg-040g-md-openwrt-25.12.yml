@@ -17,7 +17,6 @@ on:
       - main
     paths:
       - ".github/workflows/xg-040g-md-openwrt-25.12.yml"
-      - "config/**"
       - "scripts/**"
       - "feeds.conf.default"
 
@@ -86,6 +85,18 @@ jobs:
         run: |
           git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" openwrt
 
+      - name: Extract xg-040g-md.tar.gz to openwrt
+        run: |
+          if [ -f "xg-040g-md.tar.gz" ]; then
+            echo "📦 Extracting xg-040g-md.tar.gz to openwrt/"
+            tar -xzf xg-040g-md.tar.gz -C openwrt/
+            echo "✅ Configuration extracted successfully"
+            echo "📁 Extracted files:"
+            ls -la openwrt/
+          else
+            echo "⚠️ xg-040g-md.tar.gz not found, skipping extraction"
+          fi
+
       - name: Move build dirs to /mnt/openwrt
         run: |
           sudo mkdir -p /mnt/openwrt/{dl,staging_dir,build_dir,ccache}
@@ -139,6 +150,7 @@ jobs:
 
       - name: Copy configuration and defconfig
         run: |
+          # 从仓库复制配置文件
           cp -fv "${CONFIG_FILE}" openwrt/.config
           cd openwrt && make defconfig
           [ -e .config ] && cp .config defconfig-final.config
