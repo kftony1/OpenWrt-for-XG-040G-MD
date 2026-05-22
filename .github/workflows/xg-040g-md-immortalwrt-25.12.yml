@@ -3,7 +3,6 @@ name: Build_XG_040G_MD_ImmortalWrt_25_12
 permissions:
   contents: write
   actions: write
-  releases: write
 
 on:
   workflow_dispatch:
@@ -115,12 +114,10 @@ jobs:
             make -j$(nproc)
           fi
           
-          # 提取设备名称
           DEVICE_NAME=$(grep 'CONFIG_TARGET.*DEVICE_.*=y' .config | head -1 | sed 's/.*DEVICE_\(.*\)=y/\1/')
           echo "DEVICE_NAME=${DEVICE_NAME:+_$DEVICE_NAME}" >> $GITHUB_ENV
           echo "FILE_DATE=_$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
           
-          # 验证固件是否生成
           FIRMWARE_DIR=$(find bin/targets -name "*-sysupgrade.*" -o -name "*-factory.*" | head -1 | xargs dirname 2>/dev/null)
           if [ -z "$FIRMWARE_DIR" ]; then
             echo "❌ No firmware files found!"
