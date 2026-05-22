@@ -99,6 +99,17 @@ jobs:
             ls -la *.tar.gz 2>/dev/null || echo "No tar.gz files found"
           fi
 
+      - name: Run diy-part1.sh script
+        run: |
+          if [ -f "diy-part1.sh" ]; then
+            echo "🚀 Running diy-part1.sh script..."
+            chmod +x diy-part1.sh
+            bash diy-part1.sh
+            echo "✅ diy-part1.sh executed successfully"
+          else
+            echo "⚠️ diy-part1.sh not found, skipping"
+          fi
+
       - name: Move build dirs to /mnt/openwrt
         run: |
           sudo mkdir -p /mnt/openwrt/{dl,staging_dir,build_dir,ccache}
@@ -141,20 +152,33 @@ jobs:
       - name: Install third-party packages (homeproxy, passwall)
         working-directory: ./openwrt/package
         run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/update-packages.sh
-          bash $GITHUB_WORKSPACE/scripts/update-packages.sh
+          if [ -f "$GITHUB_WORKSPACE/scripts/update-packages.sh" ]; then
+            chmod +x $GITHUB_WORKSPACE/scripts/update-packages.sh
+            bash $GITHUB_WORKSPACE/scripts/update-packages.sh
+          else
+            echo "⚠️ update-packages.sh not found, skipping"
+          fi
           
       - name: Hotfix rust llvm CI option
         working-directory: ./openwrt
         run: |
-          sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
-          grep -n "download-ci-llvm" feeds/packages/lang/rust/Makefile
+          if [ -f "feeds/packages/lang/rust/Makefile" ]; then
+            sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
+            grep -n "download-ci-llvm" feeds/packages/lang/rust/Makefile
+          else
+            echo "⚠️ Rust Makefile not found, skipping hotfix"
+          fi
 
       - name: Copy configuration and defconfig
         run: |
-          cp -fv "${CONFIG_FILE}" openwrt/.config
-          cd openwrt && make defconfig
-          [ -e .config ] && cp .config defconfig-final.config
+          if [ -f "${CONFIG_FILE}" ]; then
+            cp -fv "${CONFIG_FILE}" openwrt/.config
+            cd openwrt && make defconfig
+            [ -e .config ] && cp .config defconfig-final.config
+          else
+            echo "❌ Configuration file ${CONFIG_FILE} not found!"
+            exit 1
+          fi
 
       - name: Upload build config files
         uses: actions/upload-artifact@v6
@@ -263,4 +287,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEP_RELEASES: ${{ env.KEEP_RELEASES }}
           KEEP_RELEASE_MARKER: ${{ env.KEEP_RELEASE_MARKER }}
-        run: bash scripts/cleanup-old-releases.sh
+        run: |
+          if [ -f "scripts/cleanup-old-releases.sh" ]; then
+            bash scripts/cleanup-old-releases.sh
+          else
+            echo "⚠️ cleanup-old-releases.sh not found, skipping"
+          fi
